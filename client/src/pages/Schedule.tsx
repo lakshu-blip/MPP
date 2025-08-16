@@ -8,14 +8,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID, API_ENDPOINTS } from "@/lib/constants";
+import RevisionModal from "@/components/RevisionModal";
 import type { ScheduleDay } from "@/lib/types";
+import type { Problem, UserProgress } from "@shared/schema";
 
 export default function Schedule() {
   const [currentWeek, setCurrentWeek] = useState(3);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [selectedProblem, setSelectedProblem] = useState<(Problem & { progress?: UserProgress }) | null>(null);
   const { toast } = useToast();
 
   const { data: schedules, isLoading } = useQuery<ScheduleDay[]>({
     queryKey: [API_ENDPOINTS.SCHEDULE, CURRENT_USER_ID],
+  });
+
+  const { data: revisionProblems = [] } = useQuery<(Problem & { progress: UserProgress })[]>({
+    queryKey: ['/api/revision/due', CURRENT_USER_ID],
   });
 
   const handleGenerateSchedule = async () => {
@@ -52,9 +60,14 @@ export default function Schedule() {
   const totalCompleted = schedules?.filter(s => s.isCompleted).length || 87;
   const totalInProgress = schedules?.filter(s => !s.isCompleted && s.completedCount > 0).length || 6;
   const totalRemaining = (schedules?.length || 350) - totalCompleted - totalInProgress;
-  const totalRevisions = 23; // TODO: Calculate from actual data
+  const totalRevisions = revisionProblems.length;
 
   const overallProgress = schedules?.length ? (totalCompleted / schedules.length) * 100 : 25;
+
+  const handleRevisionClick = (problem: Problem & { progress: UserProgress }) => {
+    setSelectedProblem(problem);
+    setRevisionModalOpen(true);
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -183,6 +196,18 @@ export default function Schedule() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Revision Modal */}
+      {selectedProblem && (
+        <RevisionModal
+          problem={selectedProblem}
+          open={revisionModalOpen}
+          onClose={() => {
+            setRevisionModalOpen(false);
+            setSelectedProblem(null);
+          }}
+        />
+      )}
     </div>
   );
 }

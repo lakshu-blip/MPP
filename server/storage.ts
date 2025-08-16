@@ -69,6 +69,16 @@ export interface IStorage {
   getUserMistakes(userId: string, problemId?: string): Promise<Mistake[]>;
   createMistake(mistake: InsertMistake): Promise<Mistake>;
   updateMistake(id: string, updates: Partial<Mistake>): Promise<Mistake>;
+
+  // Revision System
+  updateUserProgressRevision(
+    userId: string,
+    problemId: string,
+    recallDifficulty: 'easy' | 'medium' | 'hard',
+    timeSpent?: number
+  ): Promise<UserProgress>;
+  getProblemsForRevision(userId: string): Promise<(Problem & { progress: UserProgress })[]>;
+  getAllPatterns(): Promise<{ number: number; name: string; count: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -348,6 +358,105 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mistakes.id, id))
       .returning();
     return updated;
+  }
+
+  // Revision System Methods
+  async updateUserProgressRevision(
+    userId: string,
+    problemId: string,
+    recallDifficulty: 'easy' | 'medium' | 'hard',
+    timeSpent: number = 0
+  ): Promise<UserProgress> {
+    const progress = await this.getUserProgress(userId, problemId);
+    const existingProgress = progress[0];
+    
+    if (!existingProgress) {
+      throw new Error('User progress not found for revision');
+    }
+
+    // Adaptive scheduling algorithm based on recall difficulty
+    const currentInterval = 1; // Start with simple interval since we don't have the field yet
+    let nextInterval: number;
+    
+    switch (recallDifficulty) {
+      case 'easy':
+        // If easy, increase interval more aggressively
+        nextInterval = Math.min(currentInterval * 3, 14);
+        break;
+      case 'medium':
+        // If medium, moderate increase
+        nextInterval = Math.min(currentInterval * 2, 7);
+        break;
+      case 'hard':
+        // If hard, reset to shorter interval
+        nextInterval = 1;
+        break;
+    }
+
+    const nextRevisionDate = new Date();
+    nextRevisionDate.setDate(nextRevisionDate.getDate() + nextInterval);
+
+    const [updatedProgress] = await db
+      .update(userProgress)
+      .set({
+        lastAttemptAt: new Date(),
+        timeSpent: (existingProgress.timeSpent || 0) + Math.floor(timeSpent / 60), // Convert to minutes
+      })
+      .where(and(
+        eq(userProgress.userId, userId),
+        eq(userProgress.problemId, problemId)
+      ))
+      .returning();
+
+    return updatedProgress;
+  }
+
+  async getProblemsForRevision(userId: string): Promise<(Problem & { progress: UserProgress })[]> {
+    // Get completed problems for this user that need revision
+    const progressEntries = await db
+      .select()
+      .from(userProgress)
+      .leftJoin(problems, eq(userProgress.problemId, problems.id))
+      .where(and(
+        eq(userProgress.userId, userId),
+        eq(userProgress.status, 'completed')
+      ))
+      .orderBy(userProgress.completedAt);
+
+    const results = progressEntries
+      .filter(entry => entry.problems)
+      .map(entry => ({
+        ...entry.problems!,
+        progress: entry.user_progress
+      }));
+
+    // Return first 5 for revision demo
+    return results.slice(0, 5);
+  }
+
+  async getAllPatterns(): Promise<{ number: number; name: string; count: number }[]> {
+    // Extract pattern info from companies field (temporary solution)
+    const allProblems = await db.select().from(problems);
+    const patternMap = new Map<string, { number: number; name: string; count: number }>();
+    
+    allProblems.forEach(problem => {
+      if (problem.companies && problem.companies.length >= 2) {
+        const patternNumberStr = problem.companies[0];
+        const patternName = problem.companies[1];
+        
+        if (patternNumberStr.startsWith('Pattern ')) {
+          const patternNumber = parseInt(patternNumberStr.replace('Pattern ', ''));
+          const key = `${patternNumber}-${patternName}`;
+          
+          if (!patternMap.has(key)) {
+            patternMap.set(key, { number: patternNumber, name: patternName, count: 0 });
+          }
+          patternMap.get(key)!.count++;
+        }
+      }
+    });
+    
+    return Array.from(patternMap.values()).sort((a, b) => a.number - b.number);
   }
 }
 

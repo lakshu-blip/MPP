@@ -301,6 +301,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Revision System Routes
+  app.post("/api/revision/complete", async (req, res) => {
+    try {
+      const { userId, problemId, recallDifficulty, timeSpent } = req.body;
+      
+      if (!userId || !problemId || !recallDifficulty) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Update user progress with revision data
+      const updatedProgress = await storage.updateUserProgressRevision(
+        userId,
+        problemId,
+        recallDifficulty,
+        timeSpent
+      );
+
+      if (!updatedProgress) {
+        return res.status(404).json({ error: "User progress not found" });
+      }
+
+      res.json(updatedProgress);
+    } catch (error) {
+      console.error("Error completing revision:", error);
+      res.status(500).json({ error: "Failed to complete revision" });
+    }
+  });
+
+  app.get("/api/revision/due/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const dueProblems = await storage.getProblemsForRevision(userId);
+      res.json(dueProblems);
+    } catch (error) {
+      console.error("Error fetching due revisions:", error);
+      res.status(500).json({ error: "Failed to fetch due revisions" });
+    }
+  });
+
+  app.get("/api/patterns", async (req, res) => {
+    try {
+      const patterns = await storage.getAllPatterns();
+      res.json(patterns);
+    } catch (error) {
+      console.error("Error fetching patterns:", error);
+      res.status(500).json({ error: "Failed to fetch patterns" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

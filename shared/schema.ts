@@ -6,6 +6,8 @@ import { z } from "zod";
 export const difficultyEnum = pgEnum('difficulty', ['Easy', 'Medium', 'Hard']);
 export const statusEnum = pgEnum('status', ['not_started', 'in_progress', 'completed', 'revision_needed']);
 export const taskTypeEnum = pgEnum('task_type', ['new_problem', 'revision', 'flashcard']);
+export const revisionStepEnum = pgEnum('revision_step', ['problem_recall', 'pattern_notes', 'code_review']);
+export const recallDifficultyEnum = pgEnum('recall_difficulty', ['easy', 'medium', 'hard']);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -34,11 +36,13 @@ export const problems = pgTable("problems", {
   description: text("description").notNull(),
   difficulty: difficultyEnum("difficulty").notNull(),
   topics: text("topics").array().notNull(), // Array of topic names
-  companies: text("companies").array().notNull(), // Array of company names
+  companies: text("companies").array().notNull(), // Array of company names - will be replaced with pattern info
   leetcodeId: integer("leetcode_id"),
   solution: text("solution"), // Optimal solution
   alternativeSolutions: jsonb("alternative_solutions"), // Array of alternative approaches
   patterns: text("patterns").array(), // Algorithm patterns
+  patternNumber: integer("pattern_number"), // Pattern number from BYTS (e.g., 1, 2, 3...)
+  patternName: text("pattern_name"), // Pattern name from BYTS (e.g., "Two Pointers - Converging")
   hints: text("hints").array(),
   timeComplexity: text("time_complexity"),
   spaceComplexity: text("space_complexity"),
@@ -57,10 +61,13 @@ export const userProgress = pgTable("user_progress", {
   completedAt: timestamp("completed_at"),
   timeSpent: integer("time_spent").default(0), // in minutes
   mistakes: jsonb("mistakes"), // Array of mistake details
-  notes: text("notes"),
-  userSolution: text("user_solution"),
+  notes: text("notes"), // User's personal notes about the problem
+  patternNotes: text("pattern_notes"), // One-liner explaining the pattern/logic
+  userSolution: text("user_solution"), // User's code with comments
   revisionCount: integer("revision_count").default(0),
   nextRevisionDate: timestamp("next_revision_date"),
+  lastRecallDifficulty: recallDifficultyEnum("last_recall_difficulty"), // How hard was the last recall
+  revisionInterval: integer("revision_interval").default(1), // Current interval in days
 });
 
 export const schedules = pgTable("schedules", {
@@ -82,6 +89,7 @@ export const dailyTasks = pgTable("daily_tasks", {
   taskType: taskTypeEnum("task_type").notNull(),
   problemId: varchar("problem_id").references(() => problems.id),
   topic: text("topic"), // for flashcards
+  currentRevisionStep: revisionStepEnum("current_revision_step").default('problem_recall'),
   isCompleted: boolean("is_completed").default(false),
   completedAt: timestamp("completed_at"),
   timeSpent: integer("time_spent").default(0),
@@ -109,10 +117,26 @@ export const mistakes = pgTable("mistakes", {
   mistakeType: text("mistake_type").notNull(), // logical, syntax, approach, etc.
   description: text("description").notNull(),
   solution: text("solution"),
-  pattern: text("pattern"), // what pattern was missed
+  patternNumber: integer("pattern_number"), // Pattern number that was missed
+  patternName: text("pattern_name"), // Pattern name that was missed
   occuredAt: timestamp("occured_at").defaultNow(),
   isResolved: boolean("is_resolved").default(false),
   resolvedAt: timestamp("resolved_at"),
+});
+
+// New table for revision sessions
+export const revisionSessions = pgTable("revision_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  problemId: varchar("problem_id").references(() => problems.id, { onDelete: "cascade" }).notNull(),
+  sessionDate: timestamp("session_date").defaultNow(),
+  currentStep: revisionStepEnum("current_step").notNull().default('problem_recall'),
+  recallDifficulty: recallDifficultyEnum("recall_difficulty"),
+  timeSpentOnRecall: integer("time_spent_on_recall").default(0), // seconds
+  notesReviewed: boolean("notes_reviewed").default(false),
+  codeReviewed: boolean("code_reviewed").default(false),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
 });
 
 // Relations
@@ -122,12 +146,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   dailyTasks: many(dailyTasks),
   flashcards: many(flashcards),
   mistakes: many(mistakes),
+  revisionSessions: many(revisionSessions),
 }));
 
 export const problemsRelations = relations(problems, ({ many }) => ({
   userProgress: many(userProgress),
   dailyTasks: many(dailyTasks),
   mistakes: many(mistakes),
+  revisionSessions: many(revisionSessions),
 }));
 
 export const userProgressRelations = relations(userProgress, ({ one }) => ({
@@ -213,6 +239,21 @@ export const insertMistakeSchema = createInsertSchema(mistakes).omit({
   id: true,
 });
 
+export const insertRevisionSessionSchema = createInsertSchema(revisionSessions).omit({
+  id: true,
+});
+
+export const revisionSessionsRelations = relations(revisionSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [revisionSessions.userId],
+    references: [users.id],
+  }),
+  problem: one(problems, {
+    fields: [revisionSessions.problemId],
+    references: [problems.id],
+  }),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -234,6 +275,9 @@ export type InsertFlashcard = z.infer<typeof insertFlashcardSchema>;
 
 export type Mistake = typeof mistakes.$inferSelect;
 export type InsertMistake = z.infer<typeof insertMistakeSchema>;
+
+export type RevisionSession = typeof revisionSessions.$inferSelect;
+export type InsertRevisionSession = z.infer<typeof insertRevisionSessionSchema>;
 
 export type Topic = typeof topics.$inferSelect;
 export type Company = typeof companies.$inferSelect;
