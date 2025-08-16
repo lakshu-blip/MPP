@@ -11,19 +11,24 @@ import type { ProblemWithProgress } from "@/lib/types";
 
 export default function Problems() {
   const [search, setSearch] = useState("");
-  const [topicFilter, setTopicFilter] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("");
+  const [topicFilter, setTopicFilter] = useState("all");
+  const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [selectedProblem, setSelectedProblem] = useState<ProblemWithProgress | null>(null);
 
-  const { data: problems, isLoading } = useQuery<ProblemWithProgress[]>({
+  const { data: problems, isLoading, error } = useQuery<ProblemWithProgress[]>({
     queryKey: [API_ENDPOINTS.PROBLEMS, { search, topic: topicFilter, difficulty: difficultyFilter }],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
-      if (topicFilter) params.append('topic', topicFilter);
-      if (difficultyFilter) params.append('difficulty', difficultyFilter);
+      if (topicFilter && topicFilter !== 'all') params.append('topic', topicFilter);
+      if (difficultyFilter && difficultyFilter !== 'all') params.append('difficulty', difficultyFilter);
       
-      return fetch(`${API_ENDPOINTS.PROBLEMS}?${params}`).then(res => res.json());
+      const response = await fetch(`${API_ENDPOINTS.PROBLEMS}?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -66,7 +71,7 @@ export default function Problems() {
                 </SelectTrigger>
                 <SelectContent>
                   {TOPIC_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value || "all"} value={filter.value || ""}>
+                    <SelectItem key={filter.value} value={filter.value}>
                       {filter.label}
                     </SelectItem>
                   ))}
@@ -79,7 +84,7 @@ export default function Problems() {
                 </SelectTrigger>
                 <SelectContent>
                   {DIFFICULTY_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value || "all"} value={filter.value || ""}>
+                    <SelectItem key={filter.value} value={filter.value}>
                       {filter.label}
                     </SelectItem>
                   ))}
@@ -111,12 +116,23 @@ export default function Problems() {
         <Card className="bg-dark-secondary border-dark-border overflow-hidden">
           <CardHeader className="border-b border-dark-border">
             <CardTitle className="text-text-primary">
-              All Problems {problems && `(${problems.length})`}
+              All Problems {problems && Array.isArray(problems) && `(${problems.length})`}
             </CardTitle>
+            <p className="text-sm text-text-secondary mt-2">
+              Your complete problem library - browse, search, and practice at your own pace
+            </p>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-dark-border">
-              {problems?.length === 0 ? (
+              {!problems || !Array.isArray(problems) ? (
+                <div className="p-8 text-center">
+                  <i className="fas fa-exclamation-triangle text-4xl text-accent-orange mb-4"></i>
+                  <h3 className="text-lg font-medium text-text-primary mb-2">Unable to load problems</h3>
+                  <p className="text-text-secondary">
+                    There seems to be an issue loading the problems. Please refresh the page.
+                  </p>
+                </div>
+              ) : problems.length === 0 ? (
                 <div className="p-8 text-center">
                   <i className="fas fa-search text-4xl text-text-muted mb-4"></i>
                   <h3 className="text-lg font-medium text-text-primary mb-2">No problems found</h3>
@@ -125,7 +141,7 @@ export default function Problems() {
                   </p>
                 </div>
               ) : (
-                problems?.map((problem) => (
+                problems.map((problem) => (
                   <ProblemRow 
                     key={problem.id} 
                     problem={problem} 

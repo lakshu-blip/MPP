@@ -20,14 +20,14 @@ export const TOPIC_CATEGORIES = [
 ] as const;
 
 export const DIFFICULTY_FILTERS = [
-  { value: "", label: "All Levels" },
+  { value: "all", label: "All Levels" },
   { value: "Easy", label: "Easy" },
   { value: "Medium", label: "Medium" },
   { value: "Hard", label: "Hard" },
 ] as const;
 
 export const TOPIC_FILTERS = [
-  { value: "", label: "All Topics" },
+  { value: "all", label: "All Topics" },
   { value: "Arrays", label: "Arrays" },
   { value: "Strings", label: "Strings" },
   { value: "Dynamic Programming", label: "Dynamic Programming" },

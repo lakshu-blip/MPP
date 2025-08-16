@@ -7,6 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import Problems from "@/pages/Problems";
 import Schedule from "@/pages/Schedule";
 import NotFound from "@/pages/not-found";
+import PageExplanation from "@/pages/PageExplanation";
 import Sidebar from "@/components/Sidebar";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/problems" component={Problems} />
           <Route path="/schedule" component={Schedule} />
+          <Route path="/guide" component={PageExplanation} />
           <Route component={NotFound} />
         </Switch>
       </main>
