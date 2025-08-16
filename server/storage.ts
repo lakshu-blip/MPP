@@ -419,9 +419,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(problems, eq(userProgress.problemId, problems.id))
       .where(and(
         eq(userProgress.userId, userId),
-        eq(userProgress.status, 'completed'),
-        isNotNull(userProgress.nextRevisionDate),
-        lte(userProgress.nextRevisionDate, new Date())
+        eq(userProgress.status, 'completed')
       ))
       .orderBy(userProgress.completedAt)
       .limit(10);

@@ -41,8 +41,6 @@ export const problems = pgTable("problems", {
   solution: text("solution"), // Optimal solution
   alternativeSolutions: jsonb("alternative_solutions"), // Array of alternative approaches
   patterns: text("patterns").array(), // Algorithm patterns
-  patternNumber: integer("pattern_number"), // Pattern number from BYTS (e.g., 1, 2, 3...)
-  patternName: text("pattern_name"), // Pattern name from BYTS (e.g., "Two Pointers - Converging")
   hints: text("hints").array(),
   timeComplexity: text("time_complexity"),
   spaceComplexity: text("space_complexity"),

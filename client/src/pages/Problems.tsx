@@ -171,11 +171,28 @@ export default function Problems() {
           onClose={() => setSelectedProblem(null)}
         />
       )}
+      
+      {problemToComplete && (
+        <CompletionModal
+          problem={problemToComplete}
+          open={completionModalOpen}
+          onClose={() => {
+            setCompletionModalOpen(false);
+            setProblemToComplete(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function ProblemRow({ problem, onClick }: { problem: ProblemWithProgress; onClick: () => void }) {
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  
+  const handleMarkComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCompletionModalOpen(true);
+  };
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'completed':
@@ -205,46 +222,66 @@ function ProblemRow({ problem, onClick }: { problem: ProblemWithProgress; onClic
   };
 
   return (
-    <div
-      className="p-4 hover:bg-dark-surface transition-colors cursor-pointer"
-      onClick={onClick}
-      data-testid={`problem-row-${problem.id}`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 flex-1">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(problem.status)}`}></div>
-          <div className="flex-1">
-            <h4 className="font-medium text-text-primary">{problem.title}</h4>
-            <div className="flex items-center space-x-4 mt-1">
-              <Badge className={getDifficultyClass(problem.difficulty)}>
-                {problem.difficulty}
-              </Badge>
-              <span className="text-xs text-text-secondary">
-                {problem.topics?.join(", ")}
-              </span>
-              <span className="text-xs text-text-secondary">
-                {problem.companies?.join(", ")}
-              </span>
+    <>
+      <div
+        className="p-4 hover:bg-dark-surface transition-colors cursor-pointer"
+        onClick={onClick}
+        data-testid={`problem-row-${problem.id}`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 flex-1">
+            <div className={`w-2 h-2 rounded-full ${getStatusColor(problem.status)}`}></div>
+            <div className="flex-1">
+              <h4 className="font-medium text-text-primary">{problem.title}</h4>
+              <div className="flex items-center space-x-4 mt-1">
+                <Badge className={getDifficultyClass(problem.difficulty)}>
+                  {problem.difficulty}
+                </Badge>
+                <span className="text-xs text-text-secondary">
+                  {problem.topics?.join(", ")}
+                </span>
+                <span className="text-xs text-text-secondary">
+                  {problem.companies?.join(", ")}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <p className={`text-xs ${
-              problem.status === 'completed' ? 'text-accent-green' : 
-              problem.status === 'in_progress' ? 'text-accent-blue' : 
-              'text-text-muted'
-            }`}>
-              {getSuccessText(problem)}
-            </p>
-            <p className="text-xs text-text-secondary">
-              {problem.attempts || 0} attempts
-            </p>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className={`text-xs ${
+                problem.status === 'completed' ? 'text-accent-green' : 
+                problem.status === 'in_progress' ? 'text-accent-blue' : 
+                'text-text-muted'
+              }`}>
+                {getSuccessText(problem)}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {problem.attempts || 0} attempts
+              </p>
+            </div>
+            {problem.status !== 'completed' && (
+              <Button
+                size="sm"
+                onClick={handleMarkComplete}
+                className="bg-accent-green hover:bg-accent-green/80 text-dark-primary text-xs px-3 py-1"
+                data-testid={`complete-${problem.id}`}
+              >
+                ✓ Complete
+              </Button>
+            )}
+            <i className="fas fa-chevron-right text-text-muted"></i>
           </div>
-          <i className="fas fa-chevron-right text-text-muted"></i>
         </div>
       </div>
-    </div>
+      
+      {completionModalOpen && (
+        <CompletionModal
+          problem={problem}
+          open={completionModalOpen}
+          onClose={() => setCompletionModalOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
