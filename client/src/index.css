@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(240, 10%, 4%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(240, 10%, 10%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(240, 10%, 4%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(240, 4%, 84%);
+  --secondary-foreground: hsl(240, 10%, 4%);
+  --muted: hsl(240, 4%, 16%);
+  --muted-foreground: hsl(0, 0%, 69%);
+  --accent: hsl(240, 4%, 16%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(240, 6%, 20%);
+  --input: hsl(240, 6%, 20%);
+  --ring: hsl(207, 90%, 54%);
+  --chart-1: hsl(207, 90%, 54%);
+  --chart-2: hsl(159, 100%, 36%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 78%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(240, 10%, 10%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(207, 90%, 54%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(240, 4%, 16%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(240, 6%, 20%);
+  --sidebar-ring: hsl(207, 90%, 54%);
+
+  /* Custom Dark Theme Colors */
+  --dark-primary: hsl(240, 10%, 6%);
+  --dark-secondary: hsl(240, 10%, 10%);
+  --dark-surface: hsl(240, 6%, 15%);
+  --dark-border: hsl(240, 6%, 20%);
+  --accent-pink: hsl(340, 82%, 52%);
+  --accent-orange: hsl(36, 100%, 50%);
+  --accent-yellow: hsl(45, 100%, 51%);
+  --accent-green: hsl(122, 39%, 49%);
+  --accent-cyan: hsl(187, 100%, 42%);
+  --accent-blue: hsl(207, 90%, 54%);
+  --accent-purple: hsl(262, 52%, 47%);
+  --text-primary: hsl(0, 0%, 100%);
+  --text-secondary: hsl(0, 0%, 69%);
+  --text-muted: hsl(0, 0%, 40%);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(240, 10%, 4%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(240, 10%, 10%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(240, 10%, 4%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(240, 4%, 16%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(240, 4%, 16%);
+  --muted-foreground: hsl(0, 0%, 69%);
+  --accent: hsl(240, 4%, 16%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(240, 6%, 20%);
+  --input: hsl(240, 6%, 20%);
+  --ring: hsl(207, 90%, 54%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Custom utility classes */
+.bg-dark-primary { background-color: var(--dark-primary); }
+.bg-dark-secondary { background-color: var(--dark-secondary); }
+.bg-dark-surface { background-color: var(--dark-surface); }
+.border-dark-border { border-color: var(--dark-border); }
+
+.bg-accent-pink { background-color: var(--accent-pink); }
+.bg-accent-orange { background-color: var(--accent-orange); }
+.bg-accent-yellow { background-color: var(--accent-yellow); }
+.bg-accent-green { background-color: var(--accent-green); }
+.bg-accent-cyan { background-color: var(--accent-cyan); }
+.bg-accent-blue { background-color: var(--accent-blue); }
+.bg-accent-purple { background-color: var(--accent-purple); }
+
+.text-accent-pink { color: var(--accent-pink); }
+.text-accent-orange { color: var(--accent-orange); }
+.text-accent-yellow { color: var(--accent-yellow); }
+.text-accent-green { color: var(--accent-green); }
+.text-accent-cyan { color: var(--accent-cyan); }
+.text-accent-blue { color: var(--accent-blue); }
+.text-accent-purple { color: var(--accent-purple); }
+
+.text-text-primary { color: var(--text-primary); }
+.text-text-secondary { color: var(--text-secondary); }
+.text-text-muted { color: var(--text-muted); }
+
+/* Difficulty badges */
+.difficulty-easy { @apply bg-accent-pink text-black; }
+.difficulty-medium { @apply bg-accent-orange text-black; }
+.difficulty-hard { @apply bg-accent-purple text-white; }
+
+/* Status indicators */
+.status-completed { @apply bg-accent-green; }
+.status-in-progress { @apply bg-accent-blue; }
+.status-not-started { background-color: var(--text-muted); }
+.status-revision { @apply bg-accent-purple; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dark-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
