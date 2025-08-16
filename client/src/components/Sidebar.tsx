@@ -32,8 +32,8 @@ export default function Sidebar() {
           {navItems.map((item) => (
             <li key={item.path}>
               <Link href={item.path}>
-                <a
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                <div
+                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors cursor-pointer ${
                     isActive(item.path)
                       ? "bg-accent-blue/20 text-accent-blue"
                       : "hover:bg-dark-surface text-text-secondary hover:text-text-primary"
@@ -47,7 +47,7 @@ export default function Sidebar() {
                       {item.count}
                     </span>
                   )}
-                </a>
+                </div>
               </Link>
             </li>
           ))}

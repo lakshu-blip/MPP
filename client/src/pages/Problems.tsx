@@ -66,7 +66,7 @@ export default function Problems() {
                 </SelectTrigger>
                 <SelectContent>
                   {TOPIC_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>
+                    <SelectItem key={filter.value || "all"} value={filter.value || ""}>
                       {filter.label}
                     </SelectItem>
                   ))}
@@ -79,7 +79,7 @@ export default function Problems() {
                 </SelectTrigger>
                 <SelectContent>
                   {DIFFICULTY_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>
+                    <SelectItem key={filter.value || "all"} value={filter.value || ""}>
                       {filter.label}
                     </SelectItem>
                   ))}
