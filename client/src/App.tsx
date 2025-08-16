@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/Dashboard";
 import Problems from "@/pages/Problems";
 import Schedule from "@/pages/Schedule";
+import CodeChef from "@/pages/CodeChef";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 
@@ -18,6 +19,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/problems" component={Problems} />
           <Route path="/schedule" component={Schedule} />
+          <Route path="/codechef" component={CodeChef} />
           <Route component={NotFound} />
         </Switch>
       </main>

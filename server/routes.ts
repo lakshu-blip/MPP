@@ -14,8 +14,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topic as string,
         difficulty as string
       );
-      res.json(problems);
+      
+      // Add emojis for difficulty and progress tracking
+      const problemsWithEmojis = problems.map(problem => ({
+        ...problem,
+        difficultyEmoji: problem.difficulty === 'Easy' ? '🟢' : problem.difficulty === 'Medium' ? '🟡' : '🔴',
+        // Extract pattern info from companies field if available
+        patternInfo: problem.companies && problem.companies.length >= 2 && problem.companies[0].startsWith('Pattern') ? {
+          number: parseInt(problem.companies[0].replace('Pattern ', '')),
+          name: problem.companies[1]
+        } : null
+      }));
+      
+      res.json(problemsWithEmojis);
     } catch (error) {
+      console.error("Error fetching problems:", error);
       res.status(500).json({ error: "Failed to fetch problems" });
     }
   });
@@ -106,6 +119,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(progress);
     } catch (error) {
       res.status(500).json({ error: "Failed to update progress" });
+    }
+  });
+
+  // Auto-save when marking problem as completed
+  app.post("/api/problems/:problemId/complete", async (req, res) => {
+    try {
+      const { problemId } = req.params;
+      const { userId, oneLinerSummary, codeSnippet, timeSpent, notes } = req.body;
+      
+      // Get existing progress or create new one
+      let progress = await storage.getUserProgress(userId, problemId);
+      let existingProgress = progress[0];
+      
+      if (existingProgress) {
+        // Update existing progress with completion data
+        const updatedProgress = await storage.updateUserProgress(existingProgress.id, {
+          status: 'completed',
+          completedAt: new Date(),
+          notes: oneLinerSummary,
+          patternNotes: notes,
+          userSolution: codeSnippet,
+          timeSpent: (existingProgress.timeSpent || 0) + Math.floor(timeSpent / 60),
+          successfulAttempts: (existingProgress.successfulAttempts || 0) + 1,
+          attempts: (existingProgress.attempts || 0) + 1,
+          nextRevisionDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // Schedule for revision tomorrow
+        });
+        res.json(updatedProgress);
+      } else {
+        // Create new progress entry
+        const newProgress = await storage.createUserProgress({
+          userId,
+          problemId,
+          status: 'completed',
+          completedAt: new Date(),
+          notes: oneLinerSummary,
+          patternNotes: notes,
+          userSolution: codeSnippet,
+          timeSpent: Math.floor(timeSpent / 60),
+          attempts: 1,
+          successfulAttempts: 1,
+          nextRevisionDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        });
+        res.json(newProgress);
+      }
+    } catch (error) {
+      console.error("Error completing problem:", error);
+      res.status(500).json({ error: "Failed to mark problem as completed" });
     }
   });
 
@@ -347,6 +407,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching patterns:", error);
       res.status(500).json({ error: "Failed to fetch patterns" });
+    }
+  });
+
+  // CodeChef API routes
+  app.get("/api/codechef/stats/:userId", async (req, res) => {
+    try {
+      // Mock data for CodeChef stats - in production, this would fetch from CodeChef API
+      const mockStats = {
+        currentRating: 1450,
+        targetRating: 2100,
+        problemsSolved: 127,
+        recentProgress: [
+          { date: "2024-12-01", rating: 1420, contestName: "December Cook-Off" },
+          { date: "2024-12-08", rating: 1450, contestName: "December Long Challenge" },
+          { date: "2024-12-15", rating: 1450, contestName: "December Starters" }
+        ],
+        suggestedProblems: []
+      };
+      res.json(mockStats);
+    } catch (error) {
+      console.error("Error fetching CodeChef stats:", error);
+      res.status(500).json({ error: "Failed to fetch CodeChef stats" });
+    }
+  });
+
+  app.post("/api/codechef/sync-rating/:userId", async (req, res) => {
+    try {
+      // Mock sync - in production, this would call CodeChef API
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      res.json({ 
+        success: true, 
+        rating: 1470, 
+        message: "Rating synced successfully" 
+      });
+    } catch (error) {
+      console.error("Error syncing CodeChef rating:", error);
+      res.status(500).json({ error: "Failed to sync rating" });
+    }
+  });
+
+  // LeetCode API routes
+  app.get("/api/leetcode/stats/:userId", async (req, res) => {
+    try {
+      // Mock data for LeetCode stats - in production, this would fetch from LeetCode API
+      const mockStats = {
+        username: "user_leetcode",
+        ranking: 234567,
+        totalProblems: 3200,
+        solvedProblems: 456,
+        easySolved: 234,
+        mediumSolved: 178,
+        hardSolved: 44,
+        contestRating: 1678,
+        recentSubmissions: []
+      };
+      res.json(mockStats);
+    } catch (error) {
+      console.error("Error fetching LeetCode stats:", error);
+      res.status(500).json({ error: "Failed to fetch LeetCode stats" });
     }
   });
 

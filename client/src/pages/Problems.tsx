@@ -5,7 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import ProblemModal from "@/components/ProblemModal";
+import CompletionModal from "@/components/CompletionModal";
 import { API_ENDPOINTS, TOPIC_CATEGORIES, DIFFICULTY_FILTERS, TOPIC_FILTERS } from "@/lib/constants";
 import type { ProblemWithProgress } from "@/lib/types";
 
@@ -14,6 +16,8 @@ export default function Problems() {
   const [topicFilter, setTopicFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [selectedProblem, setSelectedProblem] = useState<ProblemWithProgress | null>(null);
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [problemToComplete, setProblemToComplete] = useState<any>(null);
 
   const { data: problems, isLoading, error } = useQuery<ProblemWithProgress[]>({
     queryKey: [API_ENDPOINTS.PROBLEMS, { search, topic: topicFilter, difficulty: difficultyFilter }],
@@ -34,6 +38,11 @@ export default function Problems() {
 
   const handleProblemClick = (problem: ProblemWithProgress) => {
     setSelectedProblem(problem);
+  };
+
+  const handleMarkComplete = (problem: any) => {
+    setProblemToComplete(problem);
+    setCompletionModalOpen(true);
   };
 
   if (isLoading) {

@@ -1,70 +1,64 @@
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
-import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+const navigation = [
+  { name: "Dashboard", href: "/", icon: "fas fa-chart-pie", emoji: "📊" },
+  { name: "Problems", href: "/problems", icon: "fas fa-code", emoji: "💻" },
+  { name: "Schedule", href: "/schedule", icon: "fas fa-calendar-alt", emoji: "📅" },
+  { name: "CodeChef", href: "/codechef", icon: "fas fa-trophy", emoji: "🏆" },
+];
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const [overallProgress] = useState(25); // TODO: Get from API
-
-  const navItems = [
-    { path: "/", label: "Dashboard", icon: "fa-home", count: null },
-    { path: "/problems", label: "Problems", icon: "fa-tasks", count: 340 },
-    { path: "/schedule", label: "Schedule", icon: "fa-calendar-alt", count: null },
-  ];
-
-  const isActive = (path: string) => {
-    if (path === "/") return location === "/";
-    return location.startsWith(path);
-  };
 
   return (
-    <nav className="w-64 bg-dark-secondary border-r border-dark-border flex-shrink-0 flex flex-col" data-testid="sidebar">
-      <div className="p-6">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-8 h-8 bg-accent-blue rounded-lg flex items-center justify-center">
-            <i className="fas fa-code text-white text-sm"></i>
-          </div>
-          <h1 className="text-xl font-bold text-text-primary">MPP</h1>
-        </div>
-        
-        {/* Navigation Items */}
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link href={item.path}>
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors cursor-pointer ${
-                    isActive(item.path)
-                      ? "bg-accent-blue/20 text-accent-blue"
-                      : "hover:bg-dark-surface text-text-secondary hover:text-text-primary"
-                  }`}
-                  data-testid={`nav-${item.label.toLowerCase()}`}
-                >
-                  <i className={`fas ${item.icon} w-5`}></i>
-                  <span className="font-medium">{item.label}</span>
-                  {item.count && (
-                    <span className="ml-auto bg-dark-surface px-2 py-1 rounded text-xs">
-                      {item.count}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+    <div className="w-64 bg-dark-secondary border-r border-dark-border flex flex-col">
+      {/* Logo */}
+      <div className="p-6 border-b border-dark-border">
+        <h1 className="text-xl font-bold text-text-primary">
+          🎯 Master Placement Platform
+        </h1>
+        <p className="text-xs text-text-secondary mt-1">Your path to FAANG success</p>
       </div>
 
-      {/* Progress Summary */}
-      <div className="px-6 pb-6 mt-auto">
-        <div className="bg-dark-surface p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">Overall Progress</h3>
+      {/* Navigation */}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {navigation.map((item) => {
+            const isActive = location === item.href;
+            return (
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-accent-blue text-white"
+                      : "text-text-secondary hover:text-text-primary hover:bg-dark-surface"
+                  )}
+                  data-testid={`nav-${item.name.toLowerCase()}`}
+                >
+                  <span className="text-lg">{item.emoji}</span>
+                  <span>{item.name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-dark-border">
+        <div className="text-xs text-text-secondary">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-text-secondary">Day 15/60</span>
-            <span className="text-xs text-accent-green">{overallProgress}%</span>
+            <span>Progress Tracker</span>
+            <span className="text-accent-green">87%</span>
           </div>
-          <Progress value={overallProgress} className="h-2" />
+          <div className="w-full bg-dark-primary rounded-full h-1.5">
+            <div className="bg-accent-green h-1.5 rounded-full" style={{ width: "87%" }}></div>
+          </div>
         </div>
       </div>
-    </nav>
+    </div>
   );
 }

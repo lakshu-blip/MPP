@@ -419,9 +419,12 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(problems, eq(userProgress.problemId, problems.id))
       .where(and(
         eq(userProgress.userId, userId),
-        eq(userProgress.status, 'completed')
+        eq(userProgress.status, 'completed'),
+        isNotNull(userProgress.nextRevisionDate),
+        lte(userProgress.nextRevisionDate, new Date())
       ))
-      .orderBy(userProgress.completedAt);
+      .orderBy(userProgress.completedAt)
+      .limit(10);
 
     const results = progressEntries
       .filter(entry => entry.problems)
@@ -430,8 +433,7 @@ export class DatabaseStorage implements IStorage {
         progress: entry.user_progress
       }));
 
-    // Return first 5 for revision demo
-    return results.slice(0, 5);
+    return results;
   }
 
   async getAllPatterns(): Promise<{ number: number; name: string; count: number }[]> {
