@@ -64,6 +64,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/problems/import-byts-sheet", async (req, res) => {
+    try {
+      const { importAllProblems } = await import("./importProblems");
+      const importedCount = await importAllProblems();
+      res.json({ 
+        message: `Successfully imported ${importedCount} problems from BYTS SDE Sheet`,
+        count: importedCount 
+      });
+    } catch (error) {
+      console.error("BYTS Sheet import error:", error);
+      res.status(500).json({ error: "Failed to import BYTS problems" });
+    }
+  });
+
   // User Progress API
   app.get("/api/progress/:userId", async (req, res) => {
     try {
@@ -133,38 +147,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No problems available for scheduling" });
       }
 
-      // Generate 60-day schedule
+      // Clear existing schedule
+      const existingSchedules = await storage.getUserSchedules(userId);
+      for (const schedule of existingSchedules) {
+        // TODO: Add delete schedule method
+      }
+
+      // Generate 60-day schedule following BYTS pattern progression
       const schedules = [];
       const startDate = new Date();
-      const problemsPerDay = Math.ceil(problems.length / 60);
       
-      for (let day = 1; day <= 60; day++) {
+      // Phase 1: Foundation (Days 1-20) - Core patterns
+      for (let day = 1; day <= 20; day++) {
         const scheduleDate = new Date(startDate);
         scheduleDate.setDate(startDate.getDate() + (day - 1));
         
+        const problemsPerDay = Math.ceil(problems.length / 20);
         const startIndex = (day - 1) * problemsPerDay;
         const endIndex = Math.min(startIndex + problemsPerDay, problems.length);
         const dayProblems = problems.slice(startIndex, endIndex);
-        
-        // Add some revision problems (spaced repetition)
-        const revisionProblems = [];
-        if (day > 7) {
-          // Add problems from 7 days ago for revision
-          const revisionDay = day - 7;
-          if (revisionDay > 0) {
-            const revStartIndex = (revisionDay - 1) * problemsPerDay;
-            const revEndIndex = Math.min(revStartIndex + 2, problems.length);
-            revisionProblems.push(...problems.slice(revStartIndex, revEndIndex).map(p => p.id));
-          }
-        }
         
         const schedule = await storage.createSchedule({
           userId,
           day,
           date: scheduleDate,
           problemIds: dayProblems.map(p => p.id),
+          revisionProblemIds: [],
+          flashcardTopics: dayProblems.flatMap(p => p.topics || []).slice(0, 3),
+          isCompleted: false,
+        });
+        
+        schedules.push(schedule);
+      }
+      
+      // Phase 2: Reinforcement (Days 21-40) - Pattern mastery
+      for (let day = 21; day <= 40; day++) {
+        const scheduleDate = new Date(startDate);
+        scheduleDate.setDate(startDate.getDate() + (day - 1));
+        
+        // Focus on harder problems and important patterns
+        const hardProblems = problems.filter(p => 
+          p.difficulty === 'Hard' || 
+          p.patterns?.some(pattern => 
+            pattern.includes('DP') || 
+            pattern.includes('Graph') || 
+            pattern.includes('Tree') ||
+            pattern.includes('Backtracking')
+          )
+        ).slice(0, 8);
+        
+        // Add revision from previous phases
+        const revisionDay = day - 14;
+        const revisionProblems = [];
+        if (revisionDay > 0 && revisionDay <= 20) {
+          const revStartIndex = (revisionDay - 1) * Math.ceil(problems.length / 20);
+          const revEndIndex = Math.min(revStartIndex + 3, problems.length);
+          revisionProblems.push(...problems.slice(revStartIndex, revEndIndex).map(p => p.id));
+        }
+        
+        const schedule = await storage.createSchedule({
+          userId,
+          day,
+          date: scheduleDate,
+          problemIds: hardProblems.map(p => p.id),
           revisionProblemIds: revisionProblems,
-          flashcardTopics: ["Arrays", "Strings"], // TODO: Dynamic flashcard topics
+          flashcardTopics: hardProblems.flatMap(p => p.topics || []).slice(0, 3),
+          isCompleted: false,
+        });
+        
+        schedules.push(schedule);
+      }
+      
+      // Phase 3: Mastery (Days 41-60) - Mixed practice & mock interviews
+      for (let day = 41; day <= 60; day++) {
+        const scheduleDate = new Date(startDate);
+        scheduleDate.setDate(startDate.getDate() + (day - 1));
+        
+        // Mixed difficulty for interview simulation
+        const easyProblems = problems.filter(p => p.difficulty === 'Easy').slice(0, 2);
+        const mediumProblems = problems.filter(p => p.difficulty === 'Medium').slice(0, 4);
+        const hardProblems = problems.filter(p => p.difficulty === 'Hard').slice(0, 2);
+        const mixedProblems = [...easyProblems, ...mediumProblems, ...hardProblems];
+        
+        // Spaced repetition from earlier phases
+        const revisionDay1 = day - 20;
+        const revisionDay2 = day - 14;
+        const revisionProblems = [];
+        
+        if (revisionDay1 > 0) {
+          const revStartIndex = (revisionDay1 - 1) * Math.ceil(problems.length / 20);
+          revisionProblems.push(...problems.slice(revStartIndex, revStartIndex + 2).map(p => p.id));
+        }
+        
+        const schedule = await storage.createSchedule({
+          userId,
+          day,
+          date: scheduleDate,
+          problemIds: mixedProblems.map(p => p.id),
+          revisionProblemIds: revisionProblems,
+          flashcardTopics: mixedProblems.flatMap(p => p.topics || []).slice(0, 3),
           isCompleted: false,
         });
         
