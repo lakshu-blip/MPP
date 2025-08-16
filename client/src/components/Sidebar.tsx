@@ -8,8 +8,10 @@ export default function Sidebar() {
 
   const navItems = [
     { path: "/", label: "Dashboard", icon: "fa-home", count: null },
-    { path: "/problems", label: "Problems", icon: "fa-tasks", count: 350 },
+    { path: "/problems", label: "Problems", icon: "fa-tasks", count: 340 },
     { path: "/schedule", label: "Schedule", icon: "fa-calendar-alt", count: null },
+    { path: "/progress", label: "Progress", icon: "fa-chart-line", count: null },
+    { path: "/guide", label: "Guide", icon: "fa-question-circle", count: null },
   ];
 
   const isActive = (path: string) => {
