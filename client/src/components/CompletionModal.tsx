@@ -1,22 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CURRENT_USER_ID } from "@/lib/constants";
-import type { Problem } from "@shared/schema";
 
 interface CompletionModalProps {
-  problem: Problem | null;
+  problem: any;
   open: boolean;
   onClose: () => void;
 }
@@ -24,239 +16,164 @@ interface CompletionModalProps {
 export default function CompletionModal({ problem, open, onClose }: CompletionModalProps) {
   const [oneLinerSummary, setOneLinerSummary] = useState("");
   const [codeSnippet, setCodeSnippet] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState("");
-  const [timeSpent, setTimeSpent] = useState(30); // minutes
-  
+  const [patternNotes, setPatternNotes] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const completeProblemMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
+      problemId: string;
       oneLinerSummary: string;
       codeSnippet: string;
-      timeSpent: number;
-      notes: string;
-    }) =>
-      apiRequest(
-        "POST",
-        `/api/problems/${problem?.id}/complete`,
-        {
-          userId: CURRENT_USER_ID,
-          ...data
-        }
-      ),
+      patternNotes: string;
+    }) => {
+      return apiRequest(`/api/problems/${data.problemId}/complete`, 'POST', {
+        userId: 'user1', // In real app, get from auth context
+        oneLinerSummary: data.oneLinerSummary,
+        codeSnippet: data.codeSnippet,
+        notes: data.patternNotes,
+        timeSpent: 0, // Could be tracked with timer
+      });
+    },
     onSuccess: () => {
+      toast({
+        title: "Problem Completed!",
+        description: "Your progress has been saved successfully.",
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/problems'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/progress'] });
-      
-      toast({
-        title: "Problem Completed! 🎉",
-        description: "Your solution and notes have been saved automatically.",
-      });
-      
-      // Reset form and close modal
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule'] });
+      onClose();
       setOneLinerSummary("");
       setCodeSnippet("");
-      setAdditionalNotes("");
-      setTimeSpent(30);
-      onClose();
+      setPatternNotes("");
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Save Failed",
-        description: "Unable to save your completion. Please try again.",
+        title: "Error",
+        description: "Failed to mark problem as complete. Please try again.",
         variant: "destructive",
       });
-    }
+      console.error("Error completing problem:", error);
+    },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!oneLinerSummary.trim()) {
       toast({
-        title: "One-liner Required",
-        description: "Please add a brief summary of your approach.",
+        title: "Required Field",
+        description: "Please provide a one-liner summary of your solution approach.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!codeSnippet.trim()) {
+      toast({
+        title: "Required Field", 
+        description: "Please provide your code solution.",
         variant: "destructive",
       });
       return;
     }
 
     completeProblemMutation.mutate({
-      oneLinerSummary: oneLinerSummary.trim(),
-      codeSnippet: codeSnippet.trim(),
-      timeSpent: timeSpent * 60, // Convert to seconds
-      notes: additionalNotes.trim()
+      problemId: problem.id,
+      oneLinerSummary,
+      codeSnippet,
+      patternNotes,
     });
   };
 
-  if (!problem) return null;
-
-  const getPatternInfo = () => {
-    if (problem.companies && problem.companies.length >= 2 && problem.companies[0].startsWith('Pattern')) {
-      return {
-        number: parseInt(problem.companies[0].replace('Pattern ', '')),
-        name: problem.companies[1]
-      };
-    }
-    return null;
-  };
-
-  const patternInfo = getPatternInfo();
-
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-dark-secondary border-dark-border">
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl bg-dark-primary border-dark-border">
         <DialogHeader>
-          <DialogTitle className="text-text-primary flex items-center justify-between">
-            <div>
-              <span className="text-2xl">🎉 Problem Completed!</span>
-              <div className="flex items-center space-x-2 mt-2">
-                {patternInfo && (
-                  <Badge className="bg-accent-blue/20 text-accent-blue">
-                    Pattern {patternInfo.number}
-                  </Badge>
-                )}
-                <Badge variant="outline" className="border-dark-border text-text-secondary">
-                  {problem.difficulty}
-                </Badge>
-                <span className="text-lg">{problem.difficulty === 'Easy' ? '🟢' : problem.difficulty === 'Medium' ? '🟡' : '🔴'}</span>
-              </div>
-            </div>
+          <DialogTitle className="text-text-primary">
+            Mark Problem as Complete: {problem?.title}
           </DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Problem Info */}
-          <Card className="bg-dark-primary border-dark-border">
-            <CardHeader>
-              <CardTitle className="text-text-primary flex items-center">
-                <i className="fas fa-check-circle mr-2 text-accent-green"></i>
-                {problem.title}
-                {patternInfo && (
-                  <Badge className="ml-2 bg-accent-purple/20 text-accent-purple">
-                    {patternInfo.name}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-
-          {/* Auto-save Form */}
-          <div className="grid grid-cols-1 gap-6">
-            {/* One-liner Summary */}
-            <Card className="bg-dark-primary border-dark-border">
-              <CardHeader>
-                <CardTitle className="text-text-primary text-lg">
-                  📝 One-liner Summary (Required)
-                </CardTitle>
-                <p className="text-sm text-text-secondary">
-                  Brief explanation of your approach - this will be used for quick revision
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={oneLinerSummary}
-                  onChange={(e) => setOneLinerSummary(e.target.value)}
-                  placeholder="e.g., Used two pointers technique to find target sum in sorted array..."
-                  className="min-h-[80px] bg-dark-surface border-dark-border text-text-primary resize-none"
-                  data-testid="input-one-liner"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Code Snippet */}
-            <Card className="bg-dark-primary border-dark-border">
-              <CardHeader>
-                <CardTitle className="text-text-primary text-lg">
-                  💻 Your Code Solution
-                </CardTitle>
-                <p className="text-sm text-text-secondary">
-                  Paste your working solution here for future reference
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={codeSnippet}
-                  onChange={(e) => setCodeSnippet(e.target.value)}
-                  placeholder="// Paste your solution here..."
-                  className="min-h-[200px] bg-dark-surface border-dark-border text-text-primary font-mono text-sm resize-none"
-                  data-testid="input-code-snippet"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Time & Notes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-dark-primary border-dark-border">
-                <CardHeader>
-                  <CardTitle className="text-text-primary text-lg">
-                    ⏱️ Time Spent
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      value={timeSpent}
-                      onChange={(e) => setTimeSpent(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 px-3 py-2 bg-dark-surface border border-dark-border rounded text-text-primary"
-                      min="1"
-                      max="300"
-                    />
-                    <span className="text-text-secondary">minutes</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-dark-primary border-dark-border">
-                <CardHeader>
-                  <CardTitle className="text-text-primary text-lg">
-                    📋 Additional Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={additionalNotes}
-                    onChange={(e) => setAdditionalNotes(e.target.value)}
-                    placeholder="Any additional insights or gotchas..."
-                    className="h-20 bg-dark-surface border-dark-border text-text-primary resize-none"
-                    data-testid="input-additional-notes"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="summary" className="text-text-primary">
+              One-Liner Summary <span className="text-red-400">*</span>
+            </Label>
+            <p className="text-sm text-text-secondary">
+              Briefly explain your solution approach (e.g., "Used two pointers from both ends to find max area")
+            </p>
+            <Textarea
+              id="summary"
+              value={oneLinerSummary}
+              onChange={(e) => setOneLinerSummary(e.target.value)}
+              placeholder="e.g., Used hash map to store complements and find target sum in single pass"
+              className="bg-dark-secondary border-dark-border text-text-primary"
+              rows={2}
+              data-testid="input-summary"
+            />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="code" className="text-text-primary">
+              Your Code Solution <span className="text-red-400">*</span>
+            </Label>
+            <p className="text-sm text-text-secondary">
+              Paste your working code solution with comments
+            </p>
+            <Textarea
+              id="code"
+              value={codeSnippet}
+              onChange={(e) => setCodeSnippet(e.target.value)}
+              placeholder="function twoSum(nums, target) {
+  // Your solution code here
+  const map = new Map();
+  // ... rest of your implementation
+}"
+              className="bg-dark-secondary border-dark-border text-text-primary font-mono text-sm"
+              rows={8}
+              data-testid="input-code"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pattern" className="text-text-primary">
+              Pattern Notes (Optional)
+            </Label>
+            <p className="text-sm text-text-secondary">
+              Key insights about the pattern or algorithm used
+            </p>
+            <Textarea
+              id="pattern"
+              value={patternNotes}
+              onChange={(e) => setPatternNotes(e.target.value)}
+              placeholder="e.g., Two pointers pattern works well when array is sorted or when we need to find pairs"
+              className="bg-dark-secondary border-dark-border text-text-primary"
+              rows={3}
+              data-testid="input-pattern-notes"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
             <Button
+              type="button"
               variant="outline"
               onClick={onClose}
-              className="bg-dark-surface border-dark-border hover:bg-dark-border"
-              data-testid="button-cancel-completion"
+              disabled={completeProblemMutation.isPending}
+              className="border-dark-border text-text-secondary"
+              data-testid="button-cancel"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleSubmit}
-              disabled={completeProblemMutation.isPending || !oneLinerSummary.trim()}
+              type="submit"
+              disabled={completeProblemMutation.isPending}
               className="bg-accent-green hover:bg-accent-green/80 text-dark-primary"
-              data-testid="button-save-completion"
+              data-testid="button-complete"
             >
-              {completeProblemMutation.isPending ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save mr-2"></i>
-                  Save & Complete
-                </>
-              )}
+              {completeProblemMutation.isPending ? "Saving..." : "Mark Complete"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
