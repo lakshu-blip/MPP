@@ -1,0 +1,52 @@
+I want to create a Master Placement Platform (MPP) – a comprehensive, all-in-one system for coding interview preparation, competitive programming, and placement readiness. I will provide an Excel file containing 350 coding problems (with topics and difficulty levels). Using this, I want the AI to:
+
+1. **Problem Management:**
+   - Import the provided list of problems.
+   - Categorize problems by **data structure, algorithm, difficulty**, and **company relevance** (FAANG/MANG).
+   - Store **problem statement, optimal solution snippet, and alternative approaches**.
+   - Include a **code commenting section** for each problem to explain the logic.
+   
+2. **Daily Planner & Scheduler:**
+   - Break 350 problems into a **daily schedule for 60 days** (~5–6 problems/day).
+   - Include **revision problems based on spaced repetition** (Day 1, 3, 5, 7, 14, 30, etc.).
+   - Dynamically adjust revision frequency based on user retention and mistakes.
+   - Integrate **flashcards** for logic, patterns, and frequently made mistakes.
+   - Include **code snippet review** for commonly used algorithms/patterns.
+   
+3. **Mistake Tracking & Feedback:**
+   - Track all mistakes for every problem.
+   - Reassign mistaken problems in future revision schedules.
+   - Highlight frequent mistake patterns to improve weak areas.
+
+4. **Competitive Programming (CP) Integration:**
+   - Suggest CP problems (CodeChef / LeetCode contests) aligned with DS/Algo topics.
+   - Track CP rating progress and suggest practice accordingly.
+
+5. **Placement Prep:**
+   - Include daily/weekly aptitude, reasoning, verbal, and speaking practice.
+   - Track progress and retention for these areas as well.
+
+6. **Progress & Analytics:**
+   - Display a dashboard showing **problems completed, revision progress, weak topics, mistakes, CP rating trends, and estimated interview readiness**.
+   - Track flashcard retention and frequently used code snippets.
+
+7. **Database & Features:**
+   - Store **problems, attempts, flashcards, code snippets, revision schedules, and user progress**.
+   - Allow users to **edit code, add comments, and mark problems for future revision**.
+   - Generate **daily actionable tasks** including new problems, revisions, flashcards, CP practice, and aptitude tasks.
+
+8. **Output Required from AI:**
+   - Detailed **daily schedule for 60 days**, integrating:
+     - New problems
+     - Spaced repetition revisions
+     - Flashcards
+     - Code snippet reviews
+     - Mistake-based adjustments
+     - CP practice
+     - Aptitude & placement prep
+   - Categorized problem list for reference.
+   - Suggested **technology stack & database schema** for building the platform.
+
+The goal is to create a **sound preparation mechanism** that ensures I **remember patterns, avoid repeating mistakes, and become a strong coder ready for FANG/MANG interviews**.
+
+Attach the Excel file with the 350 problems for reference and integration.
